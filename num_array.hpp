@@ -5,9 +5,10 @@
  * int n = nums[41];
  * */
 
+#include <algorithm>
+#include <concepts>
 #include <cstddef>
-#include <cstring>
-#include <cstdlib>
+#include <unordered_map>
 
 
 /////////////////////////////////////////////////////////////////////////////
@@ -17,94 +18,150 @@
 /// index a large index starts at 0 to what ever the max of the type youre using
 /////////////////////////////////////////////////////////////////////////////
 template <typename T = std::size_t>
-struct num_array {
-    T* nums = nullptr;
-    T  len  = 0;
+    requires std::integral<T> || std::floating_point<T>
+struct num_array
+{
+  public:
+    // Iterator
+    class iterator {
+      public:
+        using iterator_category = std::random_access_iterator_tag;
+        using value_type = T;
+        using difference_type = std::ptrdiff_t;
+        using pointer = const T*;
+        using reference = T; // Returned by value since elements are generated on the fly
 
-    T operator[](const T i) {
-        // check if needs to expand
-        if (i >= this->len) {
-            T* temp = (T*)malloc(sizeof(T) * (i + 1));
-            // copy the original array to the the new location
-            if (this->nums) {
-                memcpy(temp, this->nums, sizeof(T) * this->len);
+        constexpr iterator(num_array* arr, std::size_t idx) noexcept : m_arr(arr), m_idx(idx) {}
 
-                // deallocate the old memory
-                free(this->nums);
-            }
-            // adds new
-            for (T j = this->len; j <= i; j++)
-                temp[j] = j;
-            // use the new memory
-            this->nums = temp;
-            // update the length
-            this->len = i + 1;
+        constexpr T operator*() const {
+            return (*m_arr)[m_idx];
         }
-        return this->nums[i];
+
+        constexpr iterator& operator++() noexcept {
+            ++m_idx;
+            return *this;
+        }
+
+        constexpr iterator operator++(int) noexcept {
+            iterator tmp = *this;
+            ++(*this);
+            return tmp;
+        }
+
+        constexpr iterator& operator--() noexcept {
+            --m_idx;
+            return *this;
+        }
+
+        constexpr iterator operator--(int) noexcept {
+            iterator tmp = *this;
+            --(*this);
+            return tmp;
+        }
+
+        constexpr iterator& operator+=(difference_type n) noexcept {
+            m_idx += n;
+            return *this;
+        }
+
+        constexpr iterator& operator-=(difference_type n) noexcept {
+            m_idx -= n;
+            return *this;
+        }
+
+        friend constexpr iterator operator+(iterator it, difference_type n) noexcept {
+            return iterator(it.m_arr, it.m_idx + n);
+        }
+
+        friend constexpr iterator operator+(difference_type n, iterator it) noexcept {
+            return iterator(it.m_arr, it.m_idx + n);
+        }
+
+        friend constexpr iterator operator-(iterator it, difference_type n) noexcept {
+            return iterator(it.m_arr, it.m_idx - n);
+        }
+
+        friend constexpr difference_type operator-(iterator a, iterator b) noexcept {
+            return static_cast<difference_type>(a.m_idx) - static_cast<difference_type>(b.m_idx);
+        }
+
+        constexpr T operator[](difference_type n) const {
+            return *(*this + n);
+        }
+
+        friend constexpr bool operator==(const iterator& a, const iterator& b) noexcept {
+            return a.m_arr == b.m_arr && a.m_idx == b.m_idx;
+        }
+
+        friend constexpr bool operator!=(const iterator& a, const iterator& b) noexcept {
+            return !(a == b);
+        }
+
+        friend constexpr bool operator<(const iterator& a, const iterator& b) noexcept {
+            return a.m_idx < b.m_idx;
+        }
+
+        friend constexpr bool operator<=(const iterator& a, const iterator& b) noexcept {
+            return a.m_idx <= b.m_idx;
+        }
+
+        friend constexpr bool operator>(const iterator& a, const iterator& b) noexcept {
+            return a.m_idx > b.m_idx;
+        }
+
+        friend constexpr bool operator>=(const iterator& a, const iterator& b) noexcept {
+            return a.m_idx >= b.m_idx;
+        }
+
+      private:
+        num_array* m_arr;
+        std::size_t m_idx;
+    };
+  private:
+    std::unordered_map<std::size_t, T> m_swaps{};
+    std::size_t m_size{};
+
+  public:
+    [[nodiscard]] constexpr T operator[] (const std::size_t idx) noexcept
+    {
+        if (m_swaps.contains(idx))
+        {
+            return m_swaps.at(idx);
+        }
+        m_size = std::max(m_size, idx + 1);
+        return static_cast<T>(idx);
     }
 
-    void reserve(const T size){
-        (*this)[size - 1];
+    constexpr void reserve([[maybe_unused]] const std::size_t size) noexcept
+    {
+        m_size = size;
     }
 
-    num_array& swap(const T a, const T b) {
-        T va = (*this)[a];
-        T vb = (*this)[b];
-        this->nums[a] = vb;
-        this->nums[b] = va;
+    constexpr num_array& swap(const std::size_t idx_a, const std::size_t idx_b)
+    {
+        T tmp = (*this)[idx_a];
+        m_swaps[idx_a] = (*this)[idx_b];
+        m_swaps[idx_b] = tmp;
         return *this;
     }
 
-    num_array& reset() {
-        if (this->nums != 0) {
-            free(this->nums);
-            this->nums = 0;
-            this->len = 0;
-        }
-
+    constexpr num_array& reset() noexcept {
+        m_swaps.clear();
+        m_size = 0;
         return *this;
     }
 
-    num_array() = default;
-    ~num_array() { reset(); }
-
-    num_array(const num_array& other)
-        : len(other.len) {
-        if (other.nums) {
-            nums = (T*)malloc(sizeof(T) * len);
-            memcpy(nums, other.nums, sizeof(T) * len);
-        }
+    [[nodiscard]] constexpr std::size_t size() const noexcept
+    {
+        return m_size;
     }
 
-    num_array& operator=(const num_array& other) {
-        if (this != &other) {
-            T* temp = nullptr;
-            if (other.nums) {
-                temp = (T*)malloc(sizeof(T) * other.len);
-                memcpy(temp, other.nums, sizeof(T) * other.len);
-            }
-            free(nums);
-            nums = temp;
-            len  = other.len;
-        }
-        return *this;
+    [[nodiscard]] constexpr iterator begin() noexcept {
+        return iterator(this, 0);
     }
 
-    num_array(num_array&& other) noexcept
-        : nums(other.nums), len(other.len) {
-        other.nums = nullptr;
-        other.len  = 0;
+    [[nodiscard]] constexpr iterator end() noexcept {
+        return iterator(this, m_size);
     }
-
-    num_array& operator=(num_array&& other) noexcept {
-        if (this != &other) {
-            free(nums);
-            nums = other.nums;
-            len  = other.len;
-            other.nums = nullptr;
-            other.len  = 0;
-        }
-        return *this;
-    } 
 };
 

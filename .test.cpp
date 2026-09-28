@@ -7,7 +7,7 @@ int main () {
     slotmap<char, uint8_t>* map{};
 
     slotmap_init(map);
-    
+
     slotmap_set(map, 3, 'D');
     slotmap_set(map, 6, 'G');
     slotmap_set(map, 4, 'E');
@@ -18,11 +18,11 @@ int main () {
 
     std::cout << "Pos   : 0 1 2 3 4 5 6 7 8 9" << std::endl;
     std::cout << "Index : ";
-    for (int i = 0; i < map->index.len; i++) {
+    for (int i = 0; i < map->index.size(); i++) {
         std::print("{} ",(int)map->index[i]);
     }
     std::cout << "\nId    : ";
-    for (int i = 0; i < map->id.len; i++) {
+    for (int i = 0; i < map->id.size(); i++) {
         std::print("{} ",map->id[i]);
     }
 
