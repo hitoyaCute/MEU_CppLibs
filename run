@@ -1,0 +1,5 @@
+#!/usr/bin/env bash
+
+clear
+c++ -std=c++23 ./.test.cpp -Werror -Wextra -Wpedantic -fsanitize=address -g -Og -std=c++23 -o ./test && ./test
+# cc -std=c23 ./.test.cpp -fsanitize=address -Wall -Wextra -g3 -ggdb -O0 -o ./test && ./test
