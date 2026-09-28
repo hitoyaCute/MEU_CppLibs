@@ -18,8 +18,106 @@
 /// index a large index starts at 0 to what ever the max of the type youre using
 /////////////////////////////////////////////////////////////////////////////
 template <typename T = std::size_t>
-  requires std::integral<T> || std::floating_point<T>
-struct num_array {
+    requires std::integral<T> || std::floating_point<T>
+struct num_array
+{
+  public:
+    // Iterator
+    class iterator {
+      public:
+        using iterator_category = std::random_access_iterator_tag;
+        using value_type = T;
+        using difference_type = std::ptrdiff_t;
+        using pointer = const T*;
+        using reference = T; // Returned by value since elements are generated on the fly
+
+        constexpr iterator(num_array* arr, std::size_t idx) noexcept : m_arr(arr), m_idx(idx) {}
+
+        constexpr T operator*() const {
+            return (*m_arr)[m_idx];
+        }
+
+        constexpr iterator& operator++() noexcept {
+            ++m_idx;
+            return *this;
+        }
+
+        constexpr iterator operator++(int) noexcept {
+            iterator tmp = *this;
+            ++(*this);
+            return tmp;
+        }
+
+        constexpr iterator& operator--() noexcept {
+            --m_idx;
+            return *this;
+        }
+
+        constexpr iterator operator--(int) noexcept {
+            iterator tmp = *this;
+            --(*this);
+            return tmp;
+        }
+
+        constexpr iterator& operator+=(difference_type n) noexcept {
+            m_idx += n;
+            return *this;
+        }
+
+        constexpr iterator& operator-=(difference_type n) noexcept {
+            m_idx -= n;
+            return *this;
+        }
+
+        friend constexpr iterator operator+(iterator it, difference_type n) noexcept {
+            return iterator(it.m_arr, it.m_idx + n);
+        }
+
+        friend constexpr iterator operator+(difference_type n, iterator it) noexcept {
+            return iterator(it.m_arr, it.m_idx + n);
+        }
+
+        friend constexpr iterator operator-(iterator it, difference_type n) noexcept {
+            return iterator(it.m_arr, it.m_idx - n);
+        }
+
+        friend constexpr difference_type operator-(iterator a, iterator b) noexcept {
+            return static_cast<difference_type>(a.m_idx) - static_cast<difference_type>(b.m_idx);
+        }
+
+        constexpr T operator[](difference_type n) const {
+            return *(*this + n);
+        }
+
+        friend constexpr bool operator==(const iterator& a, const iterator& b) noexcept {
+            return a.m_arr == b.m_arr && a.m_idx == b.m_idx;
+        }
+
+        friend constexpr bool operator!=(const iterator& a, const iterator& b) noexcept {
+            return !(a == b);
+        }
+
+        friend constexpr bool operator<(const iterator& a, const iterator& b) noexcept {
+            return a.m_idx < b.m_idx;
+        }
+
+        friend constexpr bool operator<=(const iterator& a, const iterator& b) noexcept {
+            return a.m_idx <= b.m_idx;
+        }
+
+        friend constexpr bool operator>(const iterator& a, const iterator& b) noexcept {
+            return a.m_idx > b.m_idx;
+        }
+
+        friend constexpr bool operator>=(const iterator& a, const iterator& b) noexcept {
+            return a.m_idx >= b.m_idx;
+        }
+
+      private:
+        num_array* m_arr;
+        std::size_t m_idx;
+    };
+  private:
     std::unordered_map<std::size_t, T> m_swaps{};
     std::size_t m_size{};
 
@@ -56,6 +154,14 @@ struct num_array {
     [[nodiscard]] constexpr std::size_t size() const noexcept
     {
         return m_size;
+    }
+
+    [[nodiscard]] constexpr iterator begin() noexcept {
+        return iterator(this, 0);
+    }
+
+    [[nodiscard]] constexpr iterator end() noexcept {
+        return iterator(this, m_size);
     }
 };
 
