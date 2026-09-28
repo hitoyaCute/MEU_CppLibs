@@ -5,9 +5,9 @@
  * int n = nums[41];
  * */
 
+#include <concepts>
 #include <cstddef>
-#include <cstring>
-#include <cstdlib>
+#include <unordered_map>
 
 
 /////////////////////////////////////////////////////////////////////////////
@@ -17,94 +17,37 @@
 /// index a large index starts at 0 to what ever the max of the type youre using
 /////////////////////////////////////////////////////////////////////////////
 template <typename T = std::size_t>
+  requires std::integral<T>
 struct num_array {
-    T* nums = nullptr;
-    T  len  = 0;
+    std::unordered_map<std::size_t, T> swaps;
 
-    T operator[](const T i) {
-        // check if needs to expand
-        if (i >= this->len) {
-            T* temp = (T*)malloc(sizeof(T) * (i + 1));
-            // copy the original array to the the new location
-            if (this->nums) {
-                memcpy(temp, this->nums, sizeof(T) * this->len);
-
-                // deallocate the old memory
-                free(this->nums);
-            }
-            // adds new
-            for (T j = this->len; j <= i; j++)
-                temp[j] = j;
-            // use the new memory
-            this->nums = temp;
-            // update the length
-            this->len = i + 1;
+  public:
+    [[nodsicard]] constexpr T operator[] (const std::size_t idx) const noexcept
+    {
+        if (swaps.contains(idx))
+        {
+            return swaps.at(idx);
         }
-        return this->nums[i];
+        return T{idx};
     }
 
-    void reserve(const T size){
-        (*this)[size - 1];
+    [[deprecated("This does nothing. You should remove this function call. This function may be removed in the future.")]]
+    constexpr void reserve(const std::size_t) noexcept
+    {
+        // NOOP
     }
 
-    num_array& swap(const T a, const T b) {
-        T va = (*this)[a];
-        T vb = (*this)[b];
-        this->nums[a] = vb;
-        this->nums[b] = va;
+    constexpr num_array& swap(const std::size_t a, const std::size_t b)
+    {
+        T tmp = (*this)[a];
+        swaps[a] = (*this)[b];
+        swaps[b] = tmp;
         return *this;
     }
 
-    num_array& reset() {
-        if (this->nums != 0) {
-            free(this->nums);
-            this->nums = 0;
-            this->len = 0;
-        }
-
+    constexpr num_array& reset() noexcept {
+        swaps.clear();
         return *this;
     }
-
-    num_array() = default;
-    ~num_array() { reset(); }
-
-    num_array(const num_array& other)
-        : len(other.len) {
-        if (other.nums) {
-            nums = (T*)malloc(sizeof(T) * len);
-            memcpy(nums, other.nums, sizeof(T) * len);
-        }
-    }
-
-    num_array& operator=(const num_array& other) {
-        if (this != &other) {
-            T* temp = nullptr;
-            if (other.nums) {
-                temp = (T*)malloc(sizeof(T) * other.len);
-                memcpy(temp, other.nums, sizeof(T) * other.len);
-            }
-            free(nums);
-            nums = temp;
-            len  = other.len;
-        }
-        return *this;
-    }
-
-    num_array(num_array&& other) noexcept
-        : nums(other.nums), len(other.len) {
-        other.nums = nullptr;
-        other.len  = 0;
-    }
-
-    num_array& operator=(num_array&& other) noexcept {
-        if (this != &other) {
-            free(nums);
-            nums = other.nums;
-            len  = other.len;
-            other.nums = nullptr;
-            other.len  = 0;
-        }
-        return *this;
-    } 
 };
 
