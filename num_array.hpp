@@ -30,7 +30,7 @@ struct num_array {
         {
             return m_swaps.at(idx);
         }
-        m_size = std::max(m_size, idx);
+        m_size = std::max(m_size, idx + 1);
         return static_cast<T>(idx);
     }
 
