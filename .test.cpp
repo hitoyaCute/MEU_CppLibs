@@ -1,6 +1,8 @@
 #include "slotmap.hpp"
+#include <cstddef>
 #include <iostream>
 #include <cstdint>
+#include <iterator>
 #include <print>
 
 int main () {
@@ -18,11 +20,11 @@ int main () {
 
     std::cout << "Pos   : 0 1 2 3 4 5 6 7 8 9" << std::endl;
     std::cout << "Index : ";
-    for (int i = 0; i < map->index.size(); i++) {
+    for (std::size_t i = 0; i < map->index.size(); i++) {
         std::print("{} ",(int)map->index[i]);
     }
     std::cout << "\nId    : ";
-    for (int i = 0; i < map->id.size(); i++) {
+    for (std::size_t i = 0; i < map->id.size(); i++) {
         std::print("{} ",map->id[i]);
     }
 
